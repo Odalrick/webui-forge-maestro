@@ -85,3 +85,14 @@ def test_get_sd_models_returns_just_the_titles(fake_forge: Mock, settings: Setti
         "sd_xl_base_1.0 [31e35c80fc]",
         "flux1-dev [4af6c1d6a3]",
     ]
+
+
+def test_set_sd_model_calls_forge_and_returns_confirmation_string(
+    fake_forge: Mock, settings: Settings
+) -> None:
+    handlers = ToolHandlers(fake_forge, settings)
+
+    result = handlers.set_sd_model("flux1-dev")
+
+    assert result == "Model set to: flux1-dev"
+    fake_forge.set_model.assert_called_once_with("flux1-dev")

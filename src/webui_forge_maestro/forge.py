@@ -45,6 +45,10 @@ class ForgeClient:
         data = self._get_list("/sdapi/v1/sd-models")
         return [ForgeModel.model_validate(item) for item in data]
 
+    def set_model(self, model_name: str) -> None:
+        """Switch the active checkpoint to ``model_name``."""
+        self._post("/sdapi/v1/options", {"sd_model_checkpoint": model_name})
+
     def _get_list(self, path: str) -> list[object]:
         result = self._get(path)
         if not isinstance(result, list):

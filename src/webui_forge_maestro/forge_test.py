@@ -1,4 +1,5 @@
 import base64
+import json
 from pathlib import Path
 
 import httpx
@@ -132,3 +133,27 @@ def test_list_models_returns_parsed_entries(client: ForgeClient) -> None:
         "sd_xl_base_1.0 [31e35c80fc]",
         "flux1-dev [4af6c1d6a3]",
     ]
+
+
+@respx.mock
+def test_set_model_sends_correct_payload(client: ForgeClient) -> None:
+    route = respx.post("http://forge.test/sdapi/v1/options").mock(
+        return_value=httpx.Response(200, json={})
+    )
+
+    client.set_model("flux1-dev")
+
+    assert route.called
+    last_call: respx.models.Call = route.calls.last
+    body = json.loads(last_call.request.content)
+    assert body == {"sd_model_checkpoint": "flux1-dev"}
+
+
+@respx.mock
+def test_set_model_raises_on_500(client: ForgeClient) -> None:
+    respx.post("http://forge.test/sdapi/v1/options").mock(
+        return_value=httpx.Response(500, text="model not found")
+    )
+
+    with pytest.raises(ForgeAPIError):
+        client.set_model("nope")
