@@ -4,8 +4,6 @@ One method per endpoint we use. All network errors map to a small set of
 named exceptions so callers don't need to know about ``httpx`` internals.
 """
 
-from typing import cast
-
 import httpx
 
 from webui_forge_maestro.config import Settings
@@ -47,7 +45,7 @@ class ForgeClient:
         result = self._get(path)
         if not isinstance(result, list):
             raise ForgeAPIError(f"Expected a JSON array from {path}, got {type(result).__name__}")
-        return cast(list[object], result)
+        return result  # type: ignore[return-value]  # pyright strict: list[Unknown] vs list[object]
 
     def _get(self, path: str) -> object:
         try:

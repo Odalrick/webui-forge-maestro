@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 
 import httpx
@@ -94,5 +95,6 @@ def test_client_sends_basic_auth_when_configured() -> None:
 
     last_call: respx.models.Call = route.calls.last
     auth_header = last_call.request.headers.get("authorization", "")
-    # Basic alice:hunter2 base64-encoded
     assert auth_header.startswith("Basic ")
+    decoded = base64.b64decode(auth_header.removeprefix("Basic ")).decode("ascii")
+    assert decoded == "alice:hunter2"
