@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -50,8 +51,6 @@ def test_get_sd_upscalers_returns_just_the_names(fake_forge: Mock, settings: Set
 
 
 def test_create_server_registers_get_sd_upscalers(fake_forge: Mock, settings: Settings) -> None:
-    import asyncio
-
     handlers = ToolHandlers(fake_forge, settings)
     mcp = create_server(handlers)
     tools = asyncio.run(mcp.list_tools())

@@ -17,6 +17,7 @@ class ToolHandlers:
         self._settings = settings
 
     def get_sd_upscalers(self) -> list[str]:
+        """Return the names of all upscalers available in Forge."""
         return [u.name for u in self._forge.list_upscalers()]
 
 
