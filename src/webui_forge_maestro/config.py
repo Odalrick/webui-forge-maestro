@@ -18,7 +18,10 @@ class Settings(BaseModel):
     output_dir: Path = Path("./output")
     auth_user: str | None = None
     auth_pass: SecretStr | None = None
-    request_timeout: int = 300  # seconds
+    # REQUEST_TIMEOUT, in seconds. Upstream image-gen-mcp reads this env
+    # var as milliseconds (default 300_000 ms); httpx wants seconds, so we
+    # diverge from upstream here. Migrating users will need to adjust.
+    request_timeout: int = 300
     resize_mode: int = 0
     upscale_multiplier: float = 4.0
     upscale_width: int = 512
@@ -46,4 +49,4 @@ class Settings(BaseModel):
         }
         # Drop missing keys so pydantic falls back to the field default
         # for unset env vars instead of trying to coerce ``None``.
-        return cls.model_validate({k: v for k, v in env_map.items() if v is not None})
+        return cls.model_validate({k: v for k, v in env_map.items() if v})

@@ -68,14 +68,30 @@ def test_from_env_reads_all_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.upscaler_2 == "R-ESRGAN 4x+"
 
 
-def test_partial_auth_credentials_are_ignored(
+def test_partial_auth_credentials_are_ignored_either_direction(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # User without password
     monkeypatch.setenv("SD_AUTH_USER", "alice")
     monkeypatch.delenv("SD_AUTH_PASS", raising=False)
+    assert Settings.from_env().has_auth() is False
+
+    # Password without user
+    monkeypatch.delenv("SD_AUTH_USER", raising=False)
+    monkeypatch.setenv("SD_AUTH_PASS", "hunter2")
+    assert Settings.from_env().has_auth() is False
+
+
+def test_from_env_treats_empty_string_env_vars_as_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("SD_UPSCALER_2", "")
+    monkeypatch.setenv("SD_AUTH_USER", "")
+    monkeypatch.setenv("SD_AUTH_PASS", "")
 
     settings = Settings.from_env()
 
-    # Both must be set for the model to retain either — matches upstream
-    # behaviour where partial credentials produce no Authorization header.
-    assert settings.has_auth() is False
+    # Empty string env vars should not override defaults
+    assert settings.upscaler_2 == "None"
+    assert settings.auth_user is None
+    assert settings.auth_pass is None
