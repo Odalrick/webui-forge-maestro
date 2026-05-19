@@ -7,7 +7,7 @@ from pydantic import HttpUrl
 
 from webui_forge_maestro.config import Settings
 from webui_forge_maestro.forge import ForgeClient
-from webui_forge_maestro.models import ForgeUpscaler
+from webui_forge_maestro.models import ForgeModel, ForgeUpscaler
 from webui_forge_maestro.server import ToolHandlers, create_server
 
 
@@ -56,3 +56,32 @@ def test_create_server_registers_get_sd_upscalers(fake_forge: Mock, settings: Se
     tools = asyncio.run(mcp.list_tools())
     tool_names = [tool.name for tool in tools]
     assert "get_sd_upscalers" in tool_names
+
+
+def test_get_sd_models_returns_just_the_titles(fake_forge: Mock, settings: Settings) -> None:
+    fake_forge.list_models.return_value = [
+        ForgeModel(
+            title="sd_xl_base_1.0 [31e35c80fc]",
+            model_name="sd_xl_base_1.0",
+            hash="31e35c80fc",
+            sha256="31e35c80fc7e0d2c",
+            filename="/models/sd_xl_base_1.0.safetensors",
+            config=None,
+        ),
+        ForgeModel(
+            title="flux1-dev [4af6c1d6a3]",
+            model_name="flux1-dev",
+            hash="4af6c1d6a3",
+            sha256="4af6c1d6a3b9",
+            filename="/models/flux1-dev.safetensors",
+            config=None,
+        ),
+    ]
+    handlers = ToolHandlers(fake_forge, settings)
+
+    result = handlers.get_sd_models()
+
+    assert result == [
+        "sd_xl_base_1.0 [31e35c80fc]",
+        "flux1-dev [4af6c1d6a3]",
+    ]

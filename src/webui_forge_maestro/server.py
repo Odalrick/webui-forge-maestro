@@ -20,8 +20,13 @@ class ToolHandlers:
         """Return the names of all upscalers available in Forge."""
         return [u.name for u in self._forge.list_upscalers()]
 
+    def get_sd_models(self) -> list[str]:
+        """Return the titles of all checkpoints available in Forge."""
+        return [m.title for m in self._forge.list_models()]
+
 
 def create_server(handlers: ToolHandlers) -> FastMCP:
     mcp = FastMCP("maestro-webui-forge")
     mcp.tool()(handlers.get_sd_upscalers)
+    mcp.tool()(handlers.get_sd_models)
     return mcp

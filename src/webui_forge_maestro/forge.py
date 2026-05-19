@@ -7,7 +7,7 @@ named exceptions so callers don't need to know about ``httpx`` internals.
 import httpx
 
 from webui_forge_maestro.config import Settings
-from webui_forge_maestro.models import ForgeUpscaler
+from webui_forge_maestro.models import ForgeModel, ForgeUpscaler
 
 
 class ForgeError(Exception):
@@ -40,6 +40,10 @@ class ForgeClient:
     def list_upscalers(self) -> list[ForgeUpscaler]:
         data = self._get_list("/sdapi/v1/upscalers")
         return [ForgeUpscaler.model_validate(item) for item in data]
+
+    def list_models(self) -> list[ForgeModel]:
+        data = self._get_list("/sdapi/v1/sd-models")
+        return [ForgeModel.model_validate(item) for item in data]
 
     def _get_list(self, path: str) -> list[object]:
         result = self._get(path)

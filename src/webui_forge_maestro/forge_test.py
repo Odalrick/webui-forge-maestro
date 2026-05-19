@@ -98,3 +98,37 @@ def test_client_sends_basic_auth_when_configured() -> None:
     assert auth_header.startswith("Basic ")
     decoded = base64.b64decode(auth_header.removeprefix("Basic ")).decode("ascii")
     assert decoded == "alice:hunter2"
+
+
+@respx.mock
+def test_list_models_returns_parsed_entries(client: ForgeClient) -> None:
+    respx.get("http://forge.test/sdapi/v1/sd-models").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {
+                    "title": "sd_xl_base_1.0 [31e35c80fc]",
+                    "model_name": "sd_xl_base_1.0",
+                    "hash": "31e35c80fc",
+                    "sha256": "31e35c80fc7e0d2c...",
+                    "filename": "/models/sd_xl_base_1.0.safetensors",
+                    "config": None,
+                },
+                {
+                    "title": "flux1-dev [4af6c1d6a3]",
+                    "model_name": "flux1-dev",
+                    "hash": "4af6c1d6a3",
+                    "sha256": "4af6c1d6a3b9...",
+                    "filename": "/models/flux1-dev.safetensors",
+                    "config": None,
+                },
+            ],
+        )
+    )
+
+    models = client.list_models()
+
+    assert [m.title for m in models] == [
+        "sd_xl_base_1.0 [31e35c80fc]",
+        "flux1-dev [4af6c1d6a3]",
+    ]

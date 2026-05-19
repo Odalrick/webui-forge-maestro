@@ -13,3 +13,12 @@ class ForgeUpscaler(BaseModel):
     model_path: str | None
     model_url: str | None
     scale: float
+
+
+class ForgeModel(BaseModel):
+    title: str
+    model_name: str
+    hash: str | None
+    sha256: str | None
+    filename: str
+    config: str | None
