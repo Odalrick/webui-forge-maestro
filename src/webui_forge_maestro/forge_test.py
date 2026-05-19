@@ -10,7 +10,7 @@ from pydantic import HttpUrl, SecretStr
 
 from webui_forge_maestro.config import Settings
 from webui_forge_maestro.forge import ForgeAPIError, ForgeClient, ForgeUnreachableError
-from webui_forge_maestro.models import Txt2ImgRequest
+from webui_forge_maestro.models import ExtraBatchImageItem, ExtraBatchImagesRequest, Txt2ImgRequest
 
 
 @pytest.fixture
@@ -202,3 +202,35 @@ def test_png_info_returns_info_string(client: ForgeClient) -> None:
     result = client.png_info("data:image/png;base64,FAKE")
 
     assert result == "Steps: 4, Seed: 42"
+
+
+@respx.mock
+def test_extra_batch_images_sends_payload_and_parses_response(
+    client: ForgeClient,
+) -> None:
+    route = respx.post("http://forge.test/sdapi/v1/extra-batch-images").mock(
+        return_value=httpx.Response(200, json={"images": ["UPSCALED1"]})
+    )
+    request = ExtraBatchImagesRequest(
+        resize_mode=0,
+        show_extras_results=True,
+        gfpgan_visibility=0,
+        codeformer_visibility=0,
+        codeformer_weight=0,
+        upscaling_resize=4.0,
+        upscaling_resize_w=512,
+        upscaling_resize_h=512,
+        upscaling_crop=True,
+        upscaler_1="R-ESRGAN 4x+",
+        upscaler_2="None",
+        extras_upscaler_2_visibility=0,
+        upscale_first=False,
+        imageList=[ExtraBatchImageItem(data="RAW", name="cat.png")],
+    )
+
+    response = client.extra_batch_images(request)
+
+    assert response.images == ["UPSCALED1"]
+    body = json.loads(route.calls.last.request.content)
+    assert body["imageList"] == [{"data": "RAW", "name": "cat.png"}]
+    assert body["upscale_first"] is False

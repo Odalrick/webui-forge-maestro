@@ -25,9 +25,7 @@ def save_generated_image(b64_image: str, info: str, dest_dir: Path) -> Path:
     return path.resolve()
 
 
-def save_upscaled_image(
-    b64_image: str, source_basename: str, dest_dir: Path
-) -> Path:
+def save_upscaled_image(b64_image: str, source_basename: str, dest_dir: Path) -> Path:
     """Write an upscaled PNG next to a fixed prefix; no metadata."""
     dest_dir.mkdir(parents=True, exist_ok=True)
     path = dest_dir / f"upscaled_{source_basename}"

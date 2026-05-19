@@ -144,3 +144,62 @@ def test_generate_image_respects_output_path_override(fake_forge: Mock, tmp_path
 
     assert Path(result[0]["path"]).parent == override.resolve()
     assert not (tmp_path / "default").exists()
+
+
+def test_upscale_images_reads_files_and_writes_outputs(fake_forge: Mock, tmp_path: Path) -> None:
+    from webui_forge_maestro.models import ExtraBatchImagesResponse
+
+    settings = Settings(
+        webui_url=HttpUrl("http://forge.test"),
+        output_dir=tmp_path / "out",
+    )
+    source = tmp_path / "cat.png"
+    source.write_bytes(b"FAKE_PNG_BYTES")
+
+    fake_forge.extra_batch_images.return_value = ExtraBatchImagesResponse(
+        images=[
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII="
+        ]
+    )
+    handlers = ToolHandlers(fake_forge, settings)
+
+    result = handlers.upscale_images(images=[str(source)])
+
+    assert len(result) == 1
+    out_path = Path(result[0]["path"])
+    assert out_path.name == "upscaled_cat.png"
+    assert out_path.exists()
+
+    request = fake_forge.extra_batch_images.call_args.args[0]
+    assert len(request.imageList) == 1
+    assert request.imageList[0].name == "cat.png"
+    # Hardcoded payload bits the tool surface doesn't expose:
+    assert request.gfpgan_visibility == 0
+    assert request.upscaling_crop is True
+    assert request.show_extras_results is True
+    # Defaults pulled from Settings:
+    assert request.upscaler_1 == "R-ESRGAN 4x+"
+    assert request.upscaler_2 == "None"
+    assert request.upscaling_resize == 4.0
+
+
+def test_upscale_images_coerces_resize_mode_string_to_int(fake_forge: Mock, tmp_path: Path) -> None:
+    from webui_forge_maestro.models import ExtraBatchImagesResponse
+
+    settings = Settings(
+        webui_url=HttpUrl("http://forge.test"),
+        output_dir=tmp_path / "out",
+    )
+    source = tmp_path / "cat.png"
+    source.write_bytes(b"FAKE")
+
+    fake_forge.extra_batch_images.return_value = ExtraBatchImagesResponse(
+        images=[
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII="
+        ]
+    )
+    handlers = ToolHandlers(fake_forge, settings)
+
+    handlers.upscale_images(images=[str(source)], resize_mode="1")
+
+    assert fake_forge.extra_batch_images.call_args.args[0].resize_mode == 1

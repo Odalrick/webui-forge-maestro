@@ -8,6 +8,8 @@ import httpx
 
 from webui_forge_maestro.config import Settings
 from webui_forge_maestro.models import (
+    ExtraBatchImagesRequest,
+    ExtraBatchImagesResponse,
     ForgeModel,
     ForgeUpscaler,
     PngInfoResponse,
@@ -58,6 +60,10 @@ class ForgeClient:
     def txt2img(self, request: Txt2ImgRequest) -> Txt2ImgResponse:
         data = self._post("/sdapi/v1/txt2img", request.model_dump())
         return Txt2ImgResponse.model_validate(data)
+
+    def extra_batch_images(self, request: ExtraBatchImagesRequest) -> ExtraBatchImagesResponse:
+        data = self._post("/sdapi/v1/extra-batch-images", request.model_dump())
+        return ExtraBatchImagesResponse.model_validate(data)
 
     def png_info(self, image_data_url: str) -> str:
         data = self._post("/sdapi/v1/png-info", {"image": image_data_url})

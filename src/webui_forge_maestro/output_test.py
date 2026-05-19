@@ -43,17 +43,12 @@ def test_save_generated_image_embeds_info_as_exif_image_description(
 
 
 def test_save_generated_image_produces_unique_names(tmp_path: Path) -> None:
-    paths = {
-        save_generated_image(ONE_PX_PNG_B64, info="", dest_dir=tmp_path)
-        for _ in range(5)
-    }
+    paths = {save_generated_image(ONE_PX_PNG_B64, info="", dest_dir=tmp_path) for _ in range(5)}
     assert len(paths) == 5  # all distinct
 
 
 def test_save_upscaled_image_uses_upscaled_prefix(tmp_path: Path) -> None:
-    path = save_upscaled_image(
-        ONE_PX_PNG_B64, source_basename="cat.png", dest_dir=tmp_path
-    )
+    path = save_upscaled_image(ONE_PX_PNG_B64, source_basename="cat.png", dest_dir=tmp_path)
 
     assert path.name == "upscaled_cat.png"
     assert path.parent == tmp_path.resolve()
@@ -63,9 +58,7 @@ def test_save_upscaled_image_uses_upscaled_prefix(tmp_path: Path) -> None:
 def test_save_upscaled_image_writes_raw_bytes_without_metadata(
     tmp_path: Path,
 ) -> None:
-    path = save_upscaled_image(
-        ONE_PX_PNG_B64, source_basename="cat.png", dest_dir=tmp_path
-    )
+    path = save_upscaled_image(ONE_PX_PNG_B64, source_basename="cat.png", dest_dir=tmp_path)
 
     # Round-trip check: the decoded bytes match base64-decoded input.
     expected = base64.b64decode(ONE_PX_PNG_B64)

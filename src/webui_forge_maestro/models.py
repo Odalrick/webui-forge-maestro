@@ -53,3 +53,29 @@ class Txt2ImgResponse(BaseModel):
 
 class PngInfoResponse(BaseModel):
     info: str
+
+
+class ExtraBatchImageItem(BaseModel):
+    data: str  # base64
+    name: str  # filename
+
+
+class ExtraBatchImagesRequest(BaseModel):
+    resize_mode: int
+    show_extras_results: bool
+    gfpgan_visibility: float
+    codeformer_visibility: float
+    codeformer_weight: float
+    upscaling_resize: float
+    upscaling_resize_w: int
+    upscaling_resize_h: int
+    upscaling_crop: bool
+    upscaler_1: str
+    upscaler_2: str
+    extras_upscaler_2_visibility: float
+    upscale_first: bool
+    imageList: list[ExtraBatchImageItem]  # upstream wire name (camelCase intentional)
+
+
+class ExtraBatchImagesResponse(BaseModel):
+    images: list[str]  # base64

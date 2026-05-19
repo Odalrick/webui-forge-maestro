@@ -5,14 +5,20 @@
 a fresh ``FastMCP`` instance.
 """
 
+import base64
 from pathlib import Path
+from typing import Literal
 
 from mcp.server.fastmcp import FastMCP
 
 from webui_forge_maestro.config import Settings
 from webui_forge_maestro.forge import ForgeClient
-from webui_forge_maestro.models import Txt2ImgRequest
-from webui_forge_maestro.output import save_generated_image
+from webui_forge_maestro.models import (
+    ExtraBatchImageItem,
+    ExtraBatchImagesRequest,
+    Txt2ImgRequest,
+)
+from webui_forge_maestro.output import save_generated_image, save_upscaled_image
 
 
 class ToolHandlers:
@@ -82,6 +88,68 @@ class ToolHandlers:
             results.append({"path": str(path), "parameters": info})
         return results
 
+    def upscale_images(
+        self,
+        images: list[str],
+        resize_mode: Literal["0", "1"] | None = None,
+        upscaling_resize: float | None = None,
+        upscaling_resize_w: int | None = None,
+        upscaling_resize_h: int | None = None,
+        upscaler_1: str | None = None,
+        upscaler_2: str | None = None,
+        output_path: str | None = None,
+    ) -> list[dict[str, str]]:
+        """Upscale one or more images on disk via Forge's extra-batch-images endpoint."""
+        encoded = [
+            ExtraBatchImageItem(
+                data=base64.b64encode(Path(p).read_bytes()).decode("ascii"),
+                name=Path(p).name,
+            )
+            for p in images
+        ]
+        request = ExtraBatchImagesRequest(
+            resize_mode=int(resize_mode) if resize_mode is not None else self._settings.resize_mode,
+            show_extras_results=True,
+            gfpgan_visibility=0,
+            codeformer_visibility=0,
+            codeformer_weight=0,
+            upscaling_resize=(
+                upscaling_resize
+                if upscaling_resize is not None
+                else self._settings.upscale_multiplier
+            ),
+            upscaling_resize_w=(
+                upscaling_resize_w
+                if upscaling_resize_w is not None
+                else self._settings.upscale_width
+            ),
+            upscaling_resize_h=(
+                upscaling_resize_h
+                if upscaling_resize_h is not None
+                else self._settings.upscale_height
+            ),
+            upscaling_crop=True,
+            upscaler_1=upscaler_1 or self._settings.upscaler_1,
+            upscaler_2=upscaler_2 or self._settings.upscaler_2,
+            extras_upscaler_2_visibility=0,
+            upscale_first=False,
+            imageList=encoded,
+        )
+        response = self._forge.extra_batch_images(request)
+        if not response.images:
+            raise RuntimeError("No images upscaled")
+
+        dest_dir = Path(output_path) if output_path else self._settings.output_dir
+        results: list[dict[str, str]] = []
+        for source_path, b64_image in zip(images, response.images, strict=True):
+            path = save_upscaled_image(
+                b64_image,
+                source_basename=Path(source_path).name,
+                dest_dir=dest_dir,
+            )
+            results.append({"path": str(path)})
+        return results
+
 
 def create_server(handlers: ToolHandlers) -> FastMCP:
     mcp = FastMCP("maestro-webui-forge")
@@ -89,4 +157,5 @@ def create_server(handlers: ToolHandlers) -> FastMCP:
     mcp.tool()(handlers.get_sd_models)
     mcp.tool()(handlers.set_sd_model)
     mcp.tool()(handlers.generate_image)
+    mcp.tool()(handlers.upscale_images)
     return mcp
