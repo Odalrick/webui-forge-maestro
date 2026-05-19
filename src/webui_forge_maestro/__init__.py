@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from webui-forge-maestro!")
+"""Personal Python MCP server for Stable Diffusion WebUI Forge."""
