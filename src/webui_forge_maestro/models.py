@@ -22,3 +22,34 @@ class ForgeModel(BaseModel):
     sha256: str | None
     filename: str
     config: str | None
+
+
+class Txt2ImgRequest(BaseModel):
+    """Payload sent to /sdapi/v1/txt2img.
+
+    Field names match Forge's JSON exactly. ``scheduler`` (not
+    ``scheduler_name``) and ``n_iter`` (not ``batch_size``) are the wire
+    names — translation happens in ``server.py``.
+    """
+
+    prompt: str
+    negative_prompt: str
+    steps: int
+    width: int
+    height: int
+    cfg_scale: float
+    sampler_name: str
+    scheduler: str
+    seed: int
+    n_iter: int
+    restore_faces: bool
+    tiling: bool
+    distilled_cfg_scale: float
+
+
+class Txt2ImgResponse(BaseModel):
+    images: list[str]  # base64; may have a "data:image/png;base64," prefix
+
+
+class PngInfoResponse(BaseModel):
+    info: str

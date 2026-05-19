@@ -7,7 +7,13 @@ named exceptions so callers don't need to know about ``httpx`` internals.
 import httpx
 
 from webui_forge_maestro.config import Settings
-from webui_forge_maestro.models import ForgeModel, ForgeUpscaler
+from webui_forge_maestro.models import (
+    ForgeModel,
+    ForgeUpscaler,
+    PngInfoResponse,
+    Txt2ImgRequest,
+    Txt2ImgResponse,
+)
 
 
 class ForgeError(Exception):
@@ -48,6 +54,14 @@ class ForgeClient:
     def set_model(self, model_name: str) -> None:
         """Switch the active checkpoint to ``model_name``."""
         self._post("/sdapi/v1/options", {"sd_model_checkpoint": model_name})
+
+    def txt2img(self, request: Txt2ImgRequest) -> Txt2ImgResponse:
+        data = self._post("/sdapi/v1/txt2img", request.model_dump())
+        return Txt2ImgResponse.model_validate(data)
+
+    def png_info(self, image_data_url: str) -> str:
+        data = self._post("/sdapi/v1/png-info", {"image": image_data_url})
+        return PngInfoResponse.model_validate(data).info
 
     def _get_list(self, path: str) -> list[object]:
         result = self._get(path)

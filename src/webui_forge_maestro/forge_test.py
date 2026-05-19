@@ -10,6 +10,7 @@ from pydantic import HttpUrl, SecretStr
 
 from webui_forge_maestro.config import Settings
 from webui_forge_maestro.forge import ForgeAPIError, ForgeClient, ForgeUnreachableError
+from webui_forge_maestro.models import Txt2ImgRequest
 
 
 @pytest.fixture
@@ -157,3 +158,47 @@ def test_set_model_raises_on_500(client: ForgeClient) -> None:
 
     with pytest.raises(ForgeAPIError):
         client.set_model("nope")
+
+
+@respx.mock
+def test_txt2img_sends_full_payload_and_parses_images(
+    client: ForgeClient,
+) -> None:
+    route = respx.post("http://forge.test/sdapi/v1/txt2img").mock(
+        return_value=httpx.Response(200, json={"images": ["BASE64IMAGE1", "BASE64IMAGE2"]})
+    )
+    request = Txt2ImgRequest(
+        prompt="a cat",
+        negative_prompt="blurry",
+        steps=4,
+        width=1024,
+        height=1024,
+        cfg_scale=1.0,
+        sampler_name="Euler",
+        scheduler="Simple",
+        seed=-1,
+        n_iter=1,
+        restore_faces=False,
+        tiling=False,
+        distilled_cfg_scale=3.5,
+    )
+
+    response = client.txt2img(request)
+
+    body = json.loads(route.calls.last.request.content)
+    assert body["prompt"] == "a cat"
+    assert body["n_iter"] == 1
+    assert body["scheduler"] == "Simple"
+    assert body["distilled_cfg_scale"] == 3.5
+    assert response.images == ["BASE64IMAGE1", "BASE64IMAGE2"]
+
+
+@respx.mock
+def test_png_info_returns_info_string(client: ForgeClient) -> None:
+    respx.post("http://forge.test/sdapi/v1/png-info").mock(
+        return_value=httpx.Response(200, json={"info": "Steps: 4, Seed: 42"})
+    )
+
+    result = client.png_info("data:image/png;base64,FAKE")
+
+    assert result == "Steps: 4, Seed: 42"

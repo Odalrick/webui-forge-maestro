@@ -7,7 +7,7 @@ from pydantic import HttpUrl
 
 from webui_forge_maestro.config import Settings
 from webui_forge_maestro.forge import ForgeClient
-from webui_forge_maestro.models import ForgeModel, ForgeUpscaler
+from webui_forge_maestro.models import ForgeModel, ForgeUpscaler, Txt2ImgResponse
 from webui_forge_maestro.server import ToolHandlers, create_server
 
 
@@ -96,3 +96,51 @@ def test_set_sd_model_calls_forge_and_returns_confirmation_string(
 
     assert result == "Model set to: flux1-dev"
     fake_forge.set_model.assert_called_once_with("flux1-dev")
+
+
+def test_generate_image_full_flow(fake_forge: Mock, settings: Settings, tmp_path: Path) -> None:
+    settings = Settings(
+        webui_url=HttpUrl("http://forge.test"),
+        output_dir=tmp_path,
+    )
+    fake_forge.txt2img.return_value = Txt2ImgResponse(
+        images=[
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII="
+        ]
+    )
+    fake_forge.png_info.return_value = "Steps: 4, Seed: 42"
+    handlers = ToolHandlers(fake_forge, settings)
+
+    result = handlers.generate_image(prompt="a cat")
+
+    assert len(result) == 1
+    assert "path" in result[0]
+    assert result[0]["parameters"] == "Steps: 4, Seed: 42"
+    assert Path(result[0]["path"]).exists()
+    assert Path(result[0]["path"]).name.startswith("sd_")
+
+    # Wire-side fields renamed correctly:
+    request = fake_forge.txt2img.call_args.args[0]
+    assert request.scheduler == "Simple"
+    assert request.n_iter == 1
+    assert request.distilled_cfg_scale == 3.5
+
+
+def test_generate_image_respects_output_path_override(fake_forge: Mock, tmp_path: Path) -> None:
+    settings = Settings(
+        webui_url=HttpUrl("http://forge.test"),
+        output_dir=tmp_path / "default",
+    )
+    fake_forge.txt2img.return_value = Txt2ImgResponse(
+        images=[
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII="
+        ]
+    )
+    fake_forge.png_info.return_value = ""
+    handlers = ToolHandlers(fake_forge, settings)
+
+    override = tmp_path / "alt"
+    result = handlers.generate_image(prompt="a cat", output_path=str(override))
+
+    assert Path(result[0]["path"]).parent == override.resolve()
+    assert not (tmp_path / "default").exists()
