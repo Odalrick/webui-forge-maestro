@@ -34,10 +34,6 @@ Wishlist of improvements. Not prioritised, not committed-to.
 - **Caller-controlled subfolders.** Let `generate_image` (and friends) accept
   an output subfolder so a batch of flower tests lands in
   `output/flowers/` automatically, rather than one flat dump.
-- **Time-sortable filenames.** Use UUIDv7 (the time-ordered UUID variant from
-  RFC 9562 — the user initially called it "uuid8") so filenames sort
-  chronologically by default. Cheap to add, big quality-of-life win for `ls`.
-
 ## Workflow
 
 - **Pull before working.** Operational reminder rather than a feature: start

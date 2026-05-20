@@ -1,4 +1,5 @@
 import base64
+import uuid
 from pathlib import Path
 
 from PIL import Image
@@ -45,6 +46,17 @@ def test_save_generated_image_embeds_info_as_exif_image_description(
 def test_save_generated_image_produces_unique_names(tmp_path: Path) -> None:
     paths = {save_generated_image(ONE_PX_PNG_B64, info="", dest_dir=tmp_path) for _ in range(5)}
     assert len(paths) == 5  # all distinct
+
+
+def test_save_generated_image_uses_uuid7_so_filenames_sort_by_time(
+    tmp_path: Path,
+) -> None:
+    # UUIDv7 puts a Unix-ms timestamp in the high bits, so successive
+    # generations sort chronologically by filename.
+    path = save_generated_image(ONE_PX_PNG_B64, info="", dest_dir=tmp_path)
+
+    stem = path.name.removeprefix("sd_").removesuffix(".png")
+    assert uuid.UUID(stem).version == 7
 
 
 def test_save_upscaled_image_uses_upscaled_prefix(tmp_path: Path) -> None:

@@ -16,7 +16,7 @@ _EXIF_IMAGE_DESCRIPTION = 0x010E
 def save_generated_image(b64_image: str, info: str, dest_dir: Path) -> Path:
     """Write a generated PNG with ``info`` embedded as EXIF ImageDescription."""
     dest_dir.mkdir(parents=True, exist_ok=True)
-    path = dest_dir / f"sd_{uuid.uuid4()}.png"
+    path = dest_dir / f"sd_{uuid.uuid7()}.png"
     image_bytes = base64.b64decode(_strip_data_url_prefix(b64_image))
     with Image.open(io.BytesIO(image_bytes)) as img:
         exif = Image.Exif()
