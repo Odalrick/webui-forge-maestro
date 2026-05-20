@@ -93,13 +93,34 @@ sessions where Forge isn't reachable.
 LoRAs aren't a separate tool — pass them inline in the prompt as
 `<lora:name:weight>` exactly like in the WebUI.
 
+## Differences from upstream
+
+Intentional behavioural divergences from
+[`Ichigo3766/image-gen-mcp`][upstream]. Anything *not* on this list is
+either a bug in this repo or upstream getting there first.
+
+- **Server-side archive.** Every `generate_image` call sets
+  `save_images=true` on the txt2img payload, so Forge mirrors each
+  generation into its own `outdir_txt2img_samples` (with WebUI-style
+  metadata) on top of the client-side copy this server writes. Upstream
+  doesn't, so API-driven generations are absent from Forge's archive
+  there.
+- **Filename ordering.** Generated PNGs are named `sd_<uuid7>.png`;
+  upstream uses UUIDv4. UUIDv7 puts a millisecond timestamp in the high
+  bits, so `ls -1` (or any sort-by-name file browser) shows generations
+  in chronological order without a separate sort step.
+- **`REQUEST_TIMEOUT` is in seconds.** Upstream reads the same variable
+  as milliseconds. Migration math is in the [Configuration](#configuration)
+  note above the table.
+
 ## Acknowledgements
 
 This server is a from-scratch Python implementation of
 [`Ichigo3766/image-gen-mcp`][upstream], which is MIT-licensed. The
 upstream is the project of record for everything the WebUI API supports;
-this fork exists for personal learning and customisation, and stays
-behaviourally identical to upstream as of v1.
+this fork exists for personal learning and customisation. See
+[Differences from upstream](#differences-from-upstream) for the
+intentional divergences.
 
 ## License
 

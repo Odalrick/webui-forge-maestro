@@ -26,14 +26,10 @@ Wishlist of improvements. Not prioritised, not committed-to.
 
 ## Output management
 
-- **Historical copy of every generation.** The WebUI saves everything it
-  produces; the API path currently doesn't. Mirror that behaviour so API-driven
-  generations are archived the same way, independent of where the caller asked
-  the file to land. Archive root should be a user-configured path of its own —
-  image dumps get large and belong on a disk the user picks.
 - **Caller-controlled subfolders.** Let `generate_image` (and friends) accept
   an output subfolder so a batch of flower tests lands in
   `output/flowers/` automatically, rather than one flat dump.
+
 ## Workflow
 
 - **Pull before working.** Operational reminder rather than a feature: start
