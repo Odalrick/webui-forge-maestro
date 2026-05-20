@@ -45,6 +45,7 @@ class Txt2ImgRequest(BaseModel):
     restore_faces: bool
     tiling: bool
     distilled_cfg_scale: float
+    save_images: bool
 
 
 class Txt2ImgResponse(BaseModel):

@@ -71,6 +71,11 @@ class ToolHandlers:
             restore_faces=restore_faces,
             tiling=tiling,
             distilled_cfg_scale=distilled_cfg_scale,
+            # Routes the result through Forge's WebUI save pipeline so each
+            # generation lands in the user's configured archive with
+            # WebUI-style metadata — independent of where we write the file
+            # client-side below.
+            save_images=True,
         )
         response = self._forge.txt2img(request)
         if not response.images:

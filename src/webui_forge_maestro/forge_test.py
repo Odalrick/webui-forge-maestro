@@ -181,6 +181,7 @@ def test_txt2img_sends_full_payload_and_parses_images(
         restore_faces=False,
         tiling=False,
         distilled_cfg_scale=3.5,
+        save_images=True,
     )
 
     response = client.txt2img(request)
@@ -190,6 +191,7 @@ def test_txt2img_sends_full_payload_and_parses_images(
     assert body["n_iter"] == 1
     assert body["scheduler"] == "Simple"
     assert body["distilled_cfg_scale"] == 3.5
+    assert body["save_images"] is True
     assert response.images == ["BASE64IMAGE1", "BASE64IMAGE2"]
 
 
