@@ -99,6 +99,9 @@ Intentional behavioural divergences from
 [`Ichigo3766/image-gen-mcp`][upstream]. Anything *not* on this list is
 either a bug in this repo or upstream getting there first.
 
+- **Saner `generate_image` defaults.** `steps=25`, `cfg_scale=7`
+  instead of upstream's `4` / `1` (Flux-Lightning territory). SD-family
+  models are the common case; Flux callers can still override per-call.
 - **Server-side archive.** Every `generate_image` call sets
   `save_images=true` on the txt2img payload, so Forge mirrors each
   generation into its own `outdir_txt2img_samples` (with WebUI-style

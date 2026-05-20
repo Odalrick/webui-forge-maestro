@@ -124,6 +124,9 @@ def test_generate_image_full_flow(fake_forge: Mock, settings: Settings, tmp_path
     assert request.scheduler == "Simple"
     assert request.n_iter == 1
     assert request.distilled_cfg_scale == 3.5
+    # Defaults diverge from upstream (see README): SD-family-friendly, not Flux.
+    assert request.steps == 25
+    assert request.cfg_scale == 7.0
 
 
 def test_generate_image_respects_output_path_override(fake_forge: Mock, tmp_path: Path) -> None:

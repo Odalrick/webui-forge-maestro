@@ -4,9 +4,6 @@ Wishlist of improvements. Not prioritised, not committed-to.
 
 ## Defaults
 
-- **Better out-of-the-box defaults.** 4 steps / CFG 1 is reasonable for Flux but
-  wrong for SD-family models. Pick saner defaults, or at least don't bake Flux
-  assumptions into the tool signatures.
 - **Per-model default overrides.** Configurable defaults keyed by model name
   (steps, CFG, sampler, scheduler, size, etc.) so `generate_image` picks
   sensible values when called with just a prompt.
