@@ -26,12 +26,27 @@ The functional spec of record is `Ichigo3766/image-gen-mcp` pinned at commit
 doubt about tool semantics or response shapes. Any divergence is a bug in this
 repo, not in upstream.
 
+## Commands
+
+```sh
+uv sync --locked       # install / refresh deps (fails on lock drift)
+uv run pytest          # tests — discovers *_test.py (not test_*.py)
+uv run ruff check      # lint
+uv run ruff format     # format
+uv run pyright         # type-check, strict on src/
+```
+
+Python 3.14 (pinned in `.python-version`; ruff and pyright both target `py314`).
+
 ## Architecture
 
-Four modules under `src/webui_forge_maestro/`:
+Five modules under `src/webui_forge_maestro/`:
 
 - `config.py` — `Settings` model, env-loaded
 - `forge.py` — typed `httpx` client for Forge's `/sdapi/v1/*` endpoints
+- `models.py` — pydantic wire-shape models; field names match Forge's JSON
+  exactly. Tool-input → wire-name translation (`scheduler_name` → `scheduler`,
+  `batch_size` → `n_iter`) lives in `server.py`
 - `output.py` — base64 → PNG file, with optional EXIF embedding
 - `server.py` — `ToolHandlers` class + `create_server` factory wiring FastMCP
 
