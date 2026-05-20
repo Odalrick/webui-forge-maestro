@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "webui-forge-maestro",
+      "include-component-in-tag": false,
+      "release-as": "1.0.0"
+    }
+  }
+}
