@@ -1,6 +1,6 @@
 {
   "include": ["src"],
   "strict": ["src"],
-  "pythonVersion": "3.13",
+  "pythonVersion": "3.14",
   "reportMissingTypeStubs": "none"
 }

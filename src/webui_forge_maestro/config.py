@@ -33,7 +33,7 @@ class Settings(BaseModel):
         return self.auth_user is not None and self.auth_pass is not None
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         env_map: dict[str, object] = {
             "webui_url": os.environ.get("SD_WEBUI_URL"),
             "output_dir": os.environ.get("SD_OUTPUT_DIR"),

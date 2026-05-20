@@ -5,7 +5,7 @@ description = "Personal Python MCP server for Stable Diffusion WebUI Forge."
 readme = "README.md"
 authors = [{ name = "Odalrick", email = "odalrick@gmail.com" }]
 license = { text = "MIT" }
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "httpx>=0.28.1",
     "mcp[cli]>=1.27.1",
@@ -34,7 +34,7 @@ testpaths = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "RUF"]
