@@ -58,3 +58,12 @@ Conventional commits, scoped:
 - `server` — FastMCP wiring, tool handlers
 - `docs` — README, LICENSE, this file
 - `chore` — anything else
+
+## Releases & uv.lock
+
+release-please bumps `pyproject.toml` on release but does not touch
+`uv.lock`, so the editable self-entry (`webui-forge-maestro = "<old>"`) is
+stale immediately after every release. Don't extend release-please to edit
+the generated lockfile — just fix it inline in the next commit after a
+release by running `uv sync` (or letting it happen organically) and folding
+the one-line lock bump into whatever comes next.
