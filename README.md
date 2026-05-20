@@ -28,7 +28,7 @@ in lockstep.
   curl http://your-forge-host.example.local/sdapi/v1/sd-models
   ```
   should return a JSON array of checkpoint entries.
-- Python 3.13 (version pinned in `.python-version`).
+- Python 3.14 (version pinned in `.python-version`).
 - [`uv`](https://docs.astral.sh/uv/).
 
 ## Install
