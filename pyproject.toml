@@ -1,6 +1,6 @@
 [project]
 name = "webui-forge-maestro"
-version = "1.0.0"
+version = "1.1.0"
 description = "Personal Python MCP server for Stable Diffusion WebUI Forge."
 readme = "README.md"
 authors = [{ name = "Odalrick", email = "odalrick@gmail.com" }]
