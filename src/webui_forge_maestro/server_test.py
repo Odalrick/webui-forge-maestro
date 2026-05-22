@@ -6,6 +6,7 @@ import pytest
 from pydantic import HttpUrl
 
 from webui_forge_maestro.config import Settings
+from webui_forge_maestro.errors import ForgeEmptyResponseError
 from webui_forge_maestro.forge import ForgeClient
 from webui_forge_maestro.models import ForgeModel, ForgeUpscaler, Txt2ImgResponse
 from webui_forge_maestro.server import ToolHandlers, create_server
@@ -206,3 +207,44 @@ def test_upscale_images_coerces_resize_mode_string_to_int(fake_forge: Mock, tmp_
     handlers.upscale_images(images=[str(source)], resize_mode="1")
 
     assert fake_forge.extra_batch_images.call_args.args[0].resize_mode == 1
+
+
+def test_generate_image_raises_forge_empty_response_when_no_images(
+    fake_forge: Mock, settings: Settings
+) -> None:
+    fake_forge.txt2img.return_value = Txt2ImgResponse(images=[])
+    fake_forge.base_url = "http://forge.test"
+    handlers = ToolHandlers(fake_forge, settings)
+
+    with pytest.raises(ForgeEmptyResponseError) as exc:
+        handlers.generate_image(prompt="a cat")
+
+    assert str(exc.value) == (
+        "[Forge http://forge.test/sdapi/v1/txt2img] returned 200 but no images"
+    )
+    assert exc.value.base_url == "http://forge.test"
+    assert exc.value.path == "/sdapi/v1/txt2img"
+
+
+def test_upscale_images_raises_forge_empty_response_when_no_images(
+    fake_forge: Mock, tmp_path: Path
+) -> None:
+    from webui_forge_maestro.models import ExtraBatchImagesResponse
+
+    settings = Settings(
+        webui_url=HttpUrl("http://forge.test"),
+        output_dir=tmp_path / "out",
+    )
+    source = tmp_path / "cat.png"
+    source.write_bytes(b"FAKE")
+    fake_forge.extra_batch_images.return_value = ExtraBatchImagesResponse(images=[])
+    fake_forge.base_url = "http://forge.test"
+    handlers = ToolHandlers(fake_forge, settings)
+
+    with pytest.raises(ForgeEmptyResponseError) as exc:
+        handlers.upscale_images(images=[str(source)])
+
+    assert str(exc.value) == (
+        "[Forge http://forge.test/sdapi/v1/extra-batch-images] returned 200 but no images"
+    )
+    assert exc.value.path == "/sdapi/v1/extra-batch-images"

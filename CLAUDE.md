@@ -40,9 +40,11 @@ Python 3.14 (pinned in `.python-version`; ruff and pyright both target `py314`).
 
 ## Architecture
 
-Five modules under `src/webui_forge_maestro/`:
+Six modules under `src/webui_forge_maestro/`:
 
 - `config.py` — `Settings` model, env-loaded
+- `errors.py` — exception taxonomy (`MaestroError` base, `ForgeError`
+  trunk with three subclasses, plus `LocalIOError` for local file I/O)
 - `forge.py` — typed `httpx` client for Forge's `/sdapi/v1/*` endpoints
 - `models.py` — pydantic wire-shape models; field names match Forge's JSON
   exactly. Tool-input → wire-name translation (`scheduler_name` → `scheduler`,
@@ -68,6 +70,7 @@ Conventional commits, scoped:
 
 - `bootstrap` — initial repo setup, dependency wiring
 - `config` — `Settings` and env loading
+- `errors` — exception taxonomy in `errors.py`
 - `forge` — HTTP client, wire-shape models
 - `output` — file writing, EXIF
 - `server` — FastMCP wiring, tool handlers

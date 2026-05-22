@@ -12,6 +12,7 @@ from typing import Literal
 from mcp.server.fastmcp import FastMCP
 
 from webui_forge_maestro.config import Settings
+from webui_forge_maestro.errors import ForgeEmptyResponseError
 from webui_forge_maestro.forge import ForgeClient
 from webui_forge_maestro.models import (
     ExtraBatchImageItem,
@@ -79,7 +80,7 @@ class ToolHandlers:
         )
         response = self._forge.txt2img(request)
         if not response.images:
-            raise RuntimeError("No images generated")
+            raise ForgeEmptyResponseError(self._forge.base_url, "/sdapi/v1/txt2img")
 
         dest_dir = Path(output_path) if output_path else self._settings.output_dir
 
@@ -142,7 +143,7 @@ class ToolHandlers:
         )
         response = self._forge.extra_batch_images(request)
         if not response.images:
-            raise RuntimeError("No images upscaled")
+            raise ForgeEmptyResponseError(self._forge.base_url, "/sdapi/v1/extra-batch-images")
 
         dest_dir = Path(output_path) if output_path else self._settings.output_dir
         results: list[dict[str, str]] = []
