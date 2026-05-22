@@ -41,14 +41,6 @@ Wishlist of improvements. Not prioritised, not committed-to.
   a short delay. Triggered when the host serving Forge has just woken up
   and a remote mount hasn't finished reattaching by the time the first
   request lands.
-- **Distinguish Forge errors from local MCP errors.** A Forge-side
-  filesystem error (e.g. `OSError: No such device` on Forge's archive
-  directory) currently surfaces as a bare HTTP 500 and without context
-  can be misread as a missing folder on the machine running the MCP. Tag
-  errors with their source — Forge HTTP response vs. local MCP file I/O —
-  so the message makes it obvious which machine the bad path lives on.
-  Especially relevant when the MCP talks to a remote Forge over an SSH
-  tunnel and the two machines' filesystems are independent.
 
 ## Workflow
 
