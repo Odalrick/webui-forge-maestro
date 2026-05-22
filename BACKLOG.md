@@ -33,15 +33,6 @@ Wishlist of improvements. Not prioritised, not committed-to.
   moved by the caller after generation. Pairs with the
   caller-controlled-subfolders item above.
 
-## Error handling
-
-- **Retry on transient Forge filesystem errors.** When Forge returns
-  errors that look like a not-yet-attached volume — specifically `Errno 19
-  No such device` on its configured archive path — auto-retry once after
-  a short delay. Triggered when the host serving Forge has just woken up
-  and a remote mount hasn't finished reattaching by the time the first
-  request lands.
-
 ## Workflow
 
 - **Pull before working.** Operational reminder rather than a feature: start
