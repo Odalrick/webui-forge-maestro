@@ -328,8 +328,10 @@ def test_get_retries_once_on_errno_19_then_succeeds(
 def test_post_raises_after_retry_when_errno_19_persists(
     client: ForgeClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    slept: list[float] = []
+
     def fake_sleep(seconds: float) -> None:
-        return
+        slept.append(seconds)
 
     monkeypatch.setattr("time.sleep", fake_sleep)
     route = respx.post("http://forge.test/sdapi/v1/options").mock(
@@ -341,16 +343,19 @@ def test_post_raises_after_retry_when_errno_19_persists(
 
     with pytest.raises(ForgeAPIError) as exc:
         client.set_model("flux1-dev")
-    assert "No such device: second" in exc.value.body
+    assert exc.value.body == "OSError: [Errno 19] No such device: second"
     assert route.call_count == 2
+    assert slept == [3.0]
 
 
 @respx.mock
 def test_post_raises_with_second_body_when_retry_returns_different_error(
     client: ForgeClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    slept: list[float] = []
+
     def fake_sleep(seconds: float) -> None:
-        return
+        slept.append(seconds)
 
     monkeypatch.setattr("time.sleep", fake_sleep)
     route = respx.post("http://forge.test/sdapi/v1/options").mock(
@@ -365,6 +370,7 @@ def test_post_raises_with_second_body_when_retry_returns_different_error(
     assert exc.value.body == "unrelated server error"
     assert exc.value.status == 500
     assert route.call_count == 2
+    assert slept == [3.0]
 
 
 @respx.mock
