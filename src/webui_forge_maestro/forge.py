@@ -5,6 +5,8 @@ named exceptions (defined in ``errors``) so callers don't need to know
 about ``httpx`` internals.
 """
 
+import time
+
 import httpx
 
 from webui_forge_maestro.config import Settings
@@ -18,6 +20,13 @@ from webui_forge_maestro.models import (
     Txt2ImgRequest,
     Txt2ImgResponse,
 )
+
+_TRANSIENT_RETRY_DELAY_SECONDS = 3.0
+_TRANSIENT_BODY_MARKER = "Errno 19"
+
+
+def _is_transient_forge_filesystem_error(response: httpx.Response) -> bool:
+    return response.status_code >= 400 and _TRANSIENT_BODY_MARKER in response.text
 
 
 class ForgeClient:
@@ -84,11 +93,17 @@ class ForgeClient:
             raise ForgeAPIError(self._base_url, path, response.status_code, response.text)
         return response.json()  # type: ignore[no-any-return]
 
-    def _post(self, path: str, payload: object) -> object:
+    def _send_post(self, path: str, payload: object) -> httpx.Response:
         try:
-            response = self._client.post(path, json=payload)
+            return self._client.post(path, json=payload)
         except (httpx.ConnectError, httpx.TimeoutException) as exc:
             raise ForgeUnreachableError(self._base_url, str(exc)) from exc
+
+    def _post(self, path: str, payload: object) -> object:
+        response = self._send_post(path, payload)
+        if _is_transient_forge_filesystem_error(response):
+            time.sleep(_TRANSIENT_RETRY_DELAY_SECONDS)
+            response = self._send_post(path, payload)
         if response.status_code >= 400:
             raise ForgeAPIError(self._base_url, path, response.status_code, response.text)
         return response.json()  # type: ignore[no-any-return]

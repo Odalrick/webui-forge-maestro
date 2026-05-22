@@ -275,3 +275,26 @@ def test_client_strips_trailing_slash_in_base_url() -> None:
     )
     client = ForgeClient(settings)
     assert client.base_url == "http://forge.test"
+
+
+@respx.mock
+def test_post_retries_once_on_errno_19_then_succeeds(
+    client: ForgeClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slept: list[float] = []
+
+    def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr("time.sleep", fake_sleep)
+    route = respx.post("http://forge.test/sdapi/v1/options").mock(
+        side_effect=[
+            httpx.Response(500, text="OSError: [Errno 19] No such device: '/mnt/archive'"),
+            httpx.Response(200, json={}),
+        ]
+    )
+
+    client.set_model("flux1-dev")
+
+    assert route.call_count == 2
+    assert slept == [3.0]
