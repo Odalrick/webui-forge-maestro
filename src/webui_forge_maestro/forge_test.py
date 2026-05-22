@@ -9,7 +9,8 @@ import respx.models
 from pydantic import HttpUrl, SecretStr
 
 from webui_forge_maestro.config import Settings
-from webui_forge_maestro.forge import ForgeAPIError, ForgeClient, ForgeUnreachableError
+from webui_forge_maestro.errors import ForgeAPIError, ForgeUnreachableError
+from webui_forge_maestro.forge import ForgeClient
 from webui_forge_maestro.models import ExtraBatchImageItem, ExtraBatchImagesRequest, Txt2ImgRequest
 
 
@@ -66,7 +67,8 @@ def test_list_upscalers_raises_forge_unreachable_on_connect_error(
 
     with pytest.raises(ForgeUnreachableError) as exc:
         client.list_upscalers()
-    assert "forge.test" in str(exc.value)
+    assert str(exc.value).startswith("[Forge http://forge.test] unreachable:")
+    assert "connection refused" in str(exc.value)
 
 
 @respx.mock
@@ -77,7 +79,11 @@ def test_list_upscalers_raises_api_error_on_500(client: ForgeClient) -> None:
 
     with pytest.raises(ForgeAPIError) as exc:
         client.list_upscalers()
-    assert "500" in str(exc.value)
+    assert str(exc.value) == (
+        "[Forge http://forge.test/sdapi/v1/upscalers] HTTP 500: internal server error"
+    )
+    assert exc.value.status == 500
+    assert exc.value.path == "/sdapi/v1/upscalers"
 
 
 @respx.mock
@@ -156,8 +162,25 @@ def test_set_model_raises_on_500(client: ForgeClient) -> None:
         return_value=httpx.Response(500, text="model not found")
     )
 
-    with pytest.raises(ForgeAPIError):
+    with pytest.raises(ForgeAPIError) as exc:
         client.set_model("nope")
+    assert str(exc.value).startswith("[Forge http://forge.test/sdapi/v1/options] HTTP 500:")
+
+
+@respx.mock
+def test_get_list_raises_api_error_when_response_is_not_a_list(
+    client: ForgeClient,
+) -> None:
+    respx.get("http://forge.test/sdapi/v1/upscalers").mock(
+        return_value=httpx.Response(200, json={"oops": "dict, not list"})
+    )
+
+    with pytest.raises(ForgeAPIError) as exc:
+        client.list_upscalers()
+    assert str(exc.value) == (
+        "[Forge http://forge.test/sdapi/v1/upscalers] HTTP 200: Expected JSON array, got dict"
+    )
+    assert exc.value.status == 200
 
 
 @respx.mock
