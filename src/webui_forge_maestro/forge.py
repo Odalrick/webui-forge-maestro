@@ -84,11 +84,17 @@ class ForgeClient:
             )
         return result  # type: ignore[return-value]  # pyright strict: list[Unknown] vs list[object]
 
-    def _get(self, path: str) -> object:
+    def _send_get(self, path: str) -> httpx.Response:
         try:
-            response = self._client.get(path)
+            return self._client.get(path)
         except (httpx.ConnectError, httpx.TimeoutException) as exc:
             raise ForgeUnreachableError(self._base_url, str(exc)) from exc
+
+    def _get(self, path: str) -> object:
+        response = self._send_get(path)
+        if _is_transient_forge_filesystem_error(response):
+            time.sleep(_TRANSIENT_RETRY_DELAY_SECONDS)
+            response = self._send_get(path)
         if response.status_code >= 400:
             raise ForgeAPIError(self._base_url, path, response.status_code, response.text)
         return response.json()  # type: ignore[no-any-return]

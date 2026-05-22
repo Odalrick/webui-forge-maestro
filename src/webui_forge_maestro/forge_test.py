@@ -298,3 +298,27 @@ def test_post_retries_once_on_errno_19_then_succeeds(
 
     assert route.call_count == 2
     assert slept == [3.0]
+
+
+@respx.mock
+def test_get_retries_once_on_errno_19_then_succeeds(
+    client: ForgeClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slept: list[float] = []
+
+    def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr("time.sleep", fake_sleep)
+    route = respx.get("http://forge.test/sdapi/v1/upscalers").mock(
+        side_effect=[
+            httpx.Response(500, text="OSError: [Errno 19] No such device: '/mnt/models'"),
+            httpx.Response(200, json=[]),
+        ]
+    )
+
+    upscalers = client.list_upscalers()
+
+    assert route.call_count == 2
+    assert slept == [3.0]
+    assert upscalers == []
