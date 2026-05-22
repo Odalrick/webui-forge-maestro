@@ -2,8 +2,10 @@ import base64
 import uuid
 from pathlib import Path
 
+import pytest
 from PIL import Image
 
+from webui_forge_maestro.errors import LocalIOError
 from webui_forge_maestro.output import (
     save_generated_image,
     save_upscaled_image,
@@ -75,3 +77,68 @@ def test_save_upscaled_image_writes_raw_bytes_without_metadata(
     # Round-trip check: the decoded bytes match base64-decoded input.
     expected = base64.b64decode(ONE_PX_PNG_B64)
     assert path.read_bytes() == expected
+
+
+def test_save_generated_image_raises_local_io_error_when_mkdir_fails(
+    tmp_path: Path,
+) -> None:
+    parent = tmp_path / "readonly"
+    parent.mkdir()
+    parent.chmod(0o500)  # read+execute, no write — mkdir of a child fails
+    try:
+        dest = parent / "out"
+        with pytest.raises(LocalIOError) as exc:
+            save_generated_image(ONE_PX_PNG_B64, info="x", dest_dir=dest)
+        assert exc.value.operation == "mkdir"
+        assert exc.value.abs_path == dest.resolve()
+        assert str(exc.value).startswith(f"[local {dest.resolve()}] mkdir failed:")
+    finally:
+        parent.chmod(0o700)  # restore so pytest can clean up
+
+
+def test_save_generated_image_raises_local_io_error_when_save_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from PIL import Image as PILImage
+
+    def _broken_save(*_args: object, **_kwargs: object) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(PILImage.Image, "save", _broken_save)
+
+    with pytest.raises(LocalIOError) as exc:
+        save_generated_image(ONE_PX_PNG_B64, info="x", dest_dir=tmp_path)
+    assert exc.value.operation == "save"
+    assert exc.value.abs_path.parent == tmp_path.resolve()
+    assert "disk full" in str(exc.value)
+
+
+def test_save_upscaled_image_raises_local_io_error_when_mkdir_fails(
+    tmp_path: Path,
+) -> None:
+    parent = tmp_path / "readonly"
+    parent.mkdir()
+    parent.chmod(0o500)
+    try:
+        dest = parent / "out"
+        with pytest.raises(LocalIOError) as exc:
+            save_upscaled_image(ONE_PX_PNG_B64, source_basename="cat.png", dest_dir=dest)
+        assert exc.value.operation == "mkdir"
+        assert exc.value.abs_path == dest.resolve()
+    finally:
+        parent.chmod(0o700)
+
+
+def test_save_upscaled_image_raises_local_io_error_when_write_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def _broken_write_bytes(self: Path, data: bytes) -> int:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(Path, "write_bytes", _broken_write_bytes)
+
+    with pytest.raises(LocalIOError) as exc:
+        save_upscaled_image(ONE_PX_PNG_B64, source_basename="cat.png", dest_dir=tmp_path)
+    assert exc.value.operation == "write"
+    assert exc.value.abs_path == (tmp_path / "upscaled_cat.png").resolve()
+    assert "disk full" in str(exc.value)
