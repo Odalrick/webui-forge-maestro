@@ -247,3 +247,4 @@ def test_upscale_images_raises_forge_empty_response_when_no_images(
     assert str(exc.value) == (
         "[Forge http://forge.test/sdapi/v1/extra-batch-images] returned 200 but no images"
     )
+    assert exc.value.path == "/sdapi/v1/extra-batch-images"
