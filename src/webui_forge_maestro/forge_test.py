@@ -322,3 +322,86 @@ def test_get_retries_once_on_errno_19_then_succeeds(
     assert route.call_count == 2
     assert slept == [3.0]
     assert upscalers == []
+
+
+@respx.mock
+def test_post_raises_after_retry_when_errno_19_persists(
+    client: ForgeClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_sleep(seconds: float) -> None:
+        return
+
+    monkeypatch.setattr("time.sleep", fake_sleep)
+    route = respx.post("http://forge.test/sdapi/v1/options").mock(
+        side_effect=[
+            httpx.Response(500, text="OSError: [Errno 19] No such device: first"),
+            httpx.Response(500, text="OSError: [Errno 19] No such device: second"),
+        ]
+    )
+
+    with pytest.raises(ForgeAPIError) as exc:
+        client.set_model("flux1-dev")
+    assert "No such device: second" in exc.value.body
+    assert route.call_count == 2
+
+
+@respx.mock
+def test_post_raises_with_second_body_when_retry_returns_different_error(
+    client: ForgeClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_sleep(seconds: float) -> None:
+        return
+
+    monkeypatch.setattr("time.sleep", fake_sleep)
+    route = respx.post("http://forge.test/sdapi/v1/options").mock(
+        side_effect=[
+            httpx.Response(500, text="OSError: [Errno 19] No such device"),
+            httpx.Response(500, text="unrelated server error"),
+        ]
+    )
+
+    with pytest.raises(ForgeAPIError) as exc:
+        client.set_model("flux1-dev")
+    assert exc.value.body == "unrelated server error"
+    assert exc.value.status == 500
+    assert route.call_count == 2
+
+
+@respx.mock
+def test_post_does_not_retry_on_non_errno_19_500(
+    client: ForgeClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slept: list[float] = []
+
+    def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr("time.sleep", fake_sleep)
+    route = respx.post("http://forge.test/sdapi/v1/options").mock(
+        return_value=httpx.Response(500, text="model not found"),
+    )
+
+    with pytest.raises(ForgeAPIError):
+        client.set_model("nope")
+    assert route.call_count == 1
+    assert slept == []
+
+
+@respx.mock
+def test_get_does_not_retry_on_connect_error(
+    client: ForgeClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slept: list[float] = []
+
+    def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr("time.sleep", fake_sleep)
+    route = respx.get("http://forge.test/sdapi/v1/upscalers").mock(
+        side_effect=httpx.ConnectError("connection refused"),
+    )
+
+    with pytest.raises(ForgeUnreachableError):
+        client.list_upscalers()
+    assert route.call_count == 1
+    assert slept == []
