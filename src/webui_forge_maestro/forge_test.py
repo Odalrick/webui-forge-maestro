@@ -236,3 +236,19 @@ def test_extra_batch_images_sends_payload_and_parses_response(
     body = json.loads(route.calls.last.request.content)
     assert body["imageList"] == [{"data": "RAW", "name": "cat.png"}]
     assert body["upscale_first"] is False
+
+
+def test_client_exposes_stripped_base_url(settings: Settings) -> None:
+    client = ForgeClient(settings)
+    # Settings fixture uses http://forge.test (no trailing slash); pydantic
+    # HttpUrl coerces it to "http://forge.test/" but we expect the stripped form.
+    assert client.base_url == "http://forge.test"
+
+
+def test_client_strips_trailing_slash_in_base_url() -> None:
+    settings = Settings(
+        webui_url=HttpUrl("http://forge.test/"),
+        output_dir=Path("/tmp/out"),
+    )
+    client = ForgeClient(settings)
+    assert client.base_url == "http://forge.test"

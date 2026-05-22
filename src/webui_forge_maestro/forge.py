@@ -33,17 +33,23 @@ class ForgeAPIError(ForgeError):
 class ForgeClient:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+        self._base_url = str(settings.webui_url).rstrip("/")
         auth: tuple[str, str] | None = None
         if settings.has_auth():
             assert settings.auth_user is not None
             assert settings.auth_pass is not None
             auth = (settings.auth_user, settings.auth_pass.get_secret_value())
         self._client = httpx.Client(
-            base_url=str(settings.webui_url).rstrip("/"),
+            base_url=self._base_url,
             timeout=settings.request_timeout,
             headers={"Content-Type": "application/json"},
             auth=auth,
         )
+
+    @property
+    def base_url(self) -> str:
+        """Stripped base URL (no trailing slash) for use in error messages."""
+        return self._base_url
 
     def list_upscalers(self) -> list[ForgeUpscaler]:
         data = self._get_list("/sdapi/v1/upscalers")
